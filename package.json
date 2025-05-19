@@ -3,6 +3,9 @@
   "version": "1.1.0",
   "type": "module",
   "description": "Lightweight in-memory zip files",
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     "./read": "./lib/read.js",
     "./write": "./lib/write.js"
