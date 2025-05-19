@@ -13,9 +13,15 @@ interface State {
   readonly pending: boolean;
   readonly progress: null | StateProgress;
   readonly result: Blob | null;
+  readonly error: string | null;
 }
 
 interface StateProgress {
+  readonly total: ByteProgress;
+  readonly entries: readonly ByteProgress[];
+}
+
+export interface ByteProgress {
   readonly bytesWritten: number;
   readonly totalBytes: number;
 }
@@ -24,7 +30,7 @@ type StateUpdater = (state: State) => State;
 type SetState = (updater: StateUpdater) => void;
 
 const initialState: State = {
-  nextId: 2,
+  nextId: 3,
   entries: [
     {
       id: 0,
@@ -36,14 +42,14 @@ const initialState: State = {
     {
       id: 1,
       type: "file",
-      path: "big.mp4",
+      path: "big_file.mp4",
       content: null,
       compressed: false,
     },
     {
       id: 2,
       type: "url",
-      path: "big.mp4",
+      path: "big_url.mp4",
       content: "/file/.local/big_buck_bunny_1080p_h264.mov",
       compressed: false,
     },
@@ -51,6 +57,7 @@ const initialState: State = {
   pending: false,
   progress: null,
   result: null,
+  error: null,
 };
 
 function createEntry<Type extends EntryType>(
@@ -131,7 +138,7 @@ export default function App() {
             case "text":
             case "url":
               return (
-                <EntryRow entry={entry} setState={setState}>
+                <EntryRow key={entry.id} entry={entry} setState={setState}>
                   <input
                     type="text"
                     value={entry.content}
@@ -148,7 +155,7 @@ export default function App() {
               );
             case "file":
               return (
-                <EntryRow entry={entry} setState={setState}>
+                <EntryRow key={entry.id} entry={entry} setState={setState}>
                   <input
                     type="file"
                     onChange={(event) => {
@@ -184,23 +191,55 @@ export default function App() {
                   setState((state) => ({
                     ...state,
                     pending: true,
-                    result: null,
-                  }));
-                  const result = await createZip(
-                    state.entries,
-                    (bytesWritten, totalBytes) => {
-                      setState((state) => ({
-                        ...state,
-                        progress: { bytesWritten, totalBytes },
-                      }));
+                    progress: {
+                      entries: state.entries.map(() => ({
+                        bytesWritten: 0,
+                        totalBytes: 0,
+                      })),
+                      total: { bytesWritten: 0, totalBytes: 0 },
                     },
-                  );
-                  setState((state) => ({
-                    ...state,
-                    pending: false,
-                    progress: null,
-                    result,
+                    result: null,
+                    error: null,
                   }));
+                  try {
+                    const result = await createZip(state.entries, {
+                      progress(bytesWritten, totalBytes) {
+                        setState((state) => ({
+                          ...state,
+                          progress: {
+                            ...state.progress!,
+                            total: { bytesWritten, totalBytes },
+                          },
+                        }));
+                      },
+                      entryProgress(index, bytesWritten, totalBytes) {
+                        setState((state) => ({
+                          ...state,
+                          progress: {
+                            ...state.progress!,
+                            entries: state.progress!.entries.with(index, {
+                              bytesWritten,
+                              totalBytes,
+                            }),
+                          },
+                        }));
+                      },
+                    });
+                    setState((state) => ({
+                      ...state,
+                      pending: false,
+                      progress: null,
+                      result,
+                    }));
+                  } catch (error) {
+                    setState((state) => ({
+                      ...state,
+                      pending: false,
+                      progress: null,
+                      result: null,
+                      error: String(error),
+                    }));
+                  }
                 }}
               >
                 Create
@@ -214,13 +253,33 @@ export default function App() {
             {state.progress && (
               <div>
                 <p>
-                  Progress: {state.progress.bytesWritten} /{" "}
-                  {state.progress.totalBytes}
+                  Progress: {state.progress.total.bytesWritten}
+                  {" / "}
+                  {state.progress.total.totalBytes}
                 </p>
                 <progress
-                  value={state.progress.bytesWritten}
-                  max={state.progress.totalBytes}
+                  value={state.progress.total.bytesWritten}
+                  max={state.progress.total.totalBytes}
                 />
+                <p>Entries:</p>
+                <ul>
+                  {state.progress.entries.map((progress, index) => {
+                    const entry = state.entries[index];
+                    return (
+                      <li key={index}>
+                        <p>
+                          {entry.path}: {progress.bytesWritten}
+                          {" / "}
+                          {progress.totalBytes}
+                        </p>
+                        <progress
+                          value={progress.bytesWritten}
+                          max={progress.totalBytes}
+                        />
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
             )}
             {resultUrl && (
@@ -228,6 +287,11 @@ export default function App() {
                 <a href={resultUrl} download="hello.zip">
                   Download hello.zip
                 </a>
+              </div>
+            )}
+            {state.error && (
+              <div>
+                <p>Error: {state.error}</p>
               </div>
             )}
           </td>

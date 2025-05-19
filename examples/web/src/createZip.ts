@@ -1,4 +1,4 @@
-import { ZipWriter } from "@simonbuchan/zip-zap/write";
+import { ZipWriter, type BuildOptions } from "@simonbuchan/zip-zap/write";
 
 export interface EntryContentMap {
   readonly text: string;
@@ -22,25 +22,18 @@ export type UrlEntry = TypedEntry<"url">;
 
 export type Entry = TextEntry | FileEntry | UrlEntry;
 
-export type ProgressHandler = (
-  bytesWritten: number,
-  totalBytes: number,
-) => void;
-
 export async function createZip(
   entries: readonly Entry[],
-  progress?: ProgressHandler,
+  options?: BuildOptions,
 ): Promise<Blob> {
   const writer = new ZipWriter();
 
   for (const entry of entries) {
     switch (entry.type) {
       case "file":
-        if (entry.content !== null) {
-          writer.addBlob(entry.path, entry.content, {
-            compressed: entry.compressed,
-          });
-        }
+        writer.addBlob(entry.path, entry.content ?? new Blob(), {
+          compressed: entry.compressed,
+        });
         break;
       case "text":
         writer.addString(entry.path, entry.content, {
@@ -62,5 +55,5 @@ export async function createZip(
     }
   }
 
-  return await writer.build({ progress });
+  return await writer.build(options);
 }

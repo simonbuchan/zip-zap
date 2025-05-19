@@ -1,6 +1,6 @@
 {
   "name": "@simonbuchan/zip-zap",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "Lightweight in-memory zip files",
   "exports": {
@@ -21,6 +21,7 @@
   "scripts": {
     "prepare": "tsc -b",
     "test": "vitest",
+    "watch": "tsc -b --watch",
     "fmt:check": "prettier --check .",
     "fmt:write": "prettier --write ."
   },
@@ -31,6 +32,7 @@
     "prettier": "^3.5.3"
   },
   "workspaces": [
+    ".",
     "examples/*"
   ],
   "packageManager": "npm@11.4.0",

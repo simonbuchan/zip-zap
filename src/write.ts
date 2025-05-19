@@ -11,6 +11,11 @@ export interface ZipEntryOptions {
 
 export interface BuildOptions {
   progress?: (bytesWritten: number, totalBytes: number) => void;
+  entryProgress?: (
+    index: number,
+    bytesWritten: number,
+    totalBytes: number,
+  ) => void;
 }
 
 class ZipEntry {
@@ -176,26 +181,31 @@ export class ZipWriter {
   }
 
   async build(options?: BuildOptions) {
-    const entryProgress = this.entries.map((entry) => ({
-      bytesWritten: 0,
-      totalBytes: entry.streamSizeGuess,
-    }));
+    const entryProgress =
+      options?.progress &&
+      this.entries.map((entry) => ({
+        bytesWritten: 0,
+        totalBytes: entry.streamSizeGuess,
+      }));
 
     const parts: BlobPart[] = [];
     for (const entryParts of await Promise.all(
       this.entries.map(async (entry, index) => {
-        entry.progressCallback = (bytesWritten, totalBytes) => {
-          Object.assign(entryProgress[index], { bytesWritten, totalBytes });
-          const totalBytesWritten = entryProgress.reduce(
-            (sum, progress) => sum + progress.bytesWritten,
-            0,
-          );
-          const totalBytesExpected = entryProgress.reduce(
-            (sum, progress) => sum + progress.totalBytes,
-            0,
-          );
-          options?.progress?.(totalBytesWritten, totalBytesExpected);
-        };
+        if (options?.progress || options?.entryProgress) {
+          entry.progressCallback = (bytesWritten, totalBytes) => {
+            options?.entryProgress?.(index, bytesWritten, totalBytes);
+            Object.assign(entryProgress![index], { bytesWritten, totalBytes });
+            const totalBytesWritten = entryProgress!.reduce(
+              (sum, progress) => sum + progress.bytesWritten,
+              0,
+            );
+            const totalBytesExpected = entryProgress!.reduce(
+              (sum, progress) => sum + progress.totalBytes,
+              0,
+            );
+            options?.progress?.(totalBytesWritten, totalBytesExpected);
+          };
+        }
         return await entry.entryParts();
       }),
     )) {
