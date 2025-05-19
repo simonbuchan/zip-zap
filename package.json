@@ -4,10 +4,11 @@
   "type": "module",
   "description": "Lightweight in-memory zip files",
   "exports": {
-    "./read": "./src/read.ts",
-    "./write": "./src/write.ts"
+    "./read": "./lib/read.js",
+    "./write": "./lib/write.js"
   },
   "files": [
+    "lib",
     "src",
     "README.md",
     "LICENSE"
