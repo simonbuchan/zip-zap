@@ -24,7 +24,12 @@ class ZipEntry {
   compressedStream: ReadableStream<Uint8Array>;
   progressCallback?: (bytesWritten: number, totalBytes: number) => void;
 
-  constructor(name: string, stream: ReadableStream<Uint8Array>, streamSizeGuess: number = 0, options?: ZipEntryOptions) {
+  constructor(
+    name: string,
+    stream: ReadableStream<Uint8Array>,
+    streamSizeGuess: number = 0,
+    options?: ZipEntryOptions,
+  ) {
     this.streamSizeGuess = streamSizeGuess;
 
     const compressed = options?.compressed ?? true;
@@ -36,7 +41,10 @@ class ZipEntry {
       new TransformStream<Uint8Array>({
         transform(chunk, controller) {
           entry.uncompressedSize += chunk.length;
-          const totalBytes = Math.max(entry.streamSizeGuess, entry.uncompressedSize);
+          const totalBytes = Math.max(
+            entry.streamSizeGuess,
+            entry.uncompressedSize,
+          );
           entry.progressCallback?.(entry.uncompressedSize, totalBytes);
           entry.crc32 = crc32(entry.crc32, chunk);
           controller.enqueue(chunk);
@@ -45,7 +53,7 @@ class ZipEntry {
     );
     if (compressed) {
       this.compressedStream = this.compressedStream.pipeThrough(
-        new CompressionStream("deflate-raw")
+        new CompressionStream("deflate-raw"),
       );
     }
     this.compressedStream = this.compressedStream.pipeThrough(
@@ -54,7 +62,7 @@ class ZipEntry {
           entry.compressedSize += chunk.length;
           controller.enqueue(chunk);
         },
-      })
+      }),
     );
   }
 
@@ -111,7 +119,7 @@ class ZipEntry {
 
 export class ZipSource {
   static fromString(data: string): ZipSource {
-    return ZipSource.fromBlob(new Blob([data], {type: "text/plain"}));
+    return ZipSource.fromBlob(new Blob([data], { type: "text/plain" }));
   }
 
   static fromBlob(blob: Blob): ZipSource {
@@ -162,27 +170,35 @@ export class ZipWriter {
   }
 
   add(name: string, data: ZipSource, options?: ZipEntryOptions) {
-    this.entries.push(new ZipEntry(name, data.stream, data.expectedSize, options));
+    this.entries.push(
+      new ZipEntry(name, data.stream, data.expectedSize, options),
+    );
   }
 
-  async build(
-    options?: BuildOptions,
-  ) {
+  async build(options?: BuildOptions) {
     const entryProgress = this.entries.map((entry) => ({
       bytesWritten: 0,
       totalBytes: entry.streamSizeGuess,
     }));
 
     const parts: BlobPart[] = [];
-    for (const entryParts of await Promise.all(this.entries.map(async (entry, index) => {
-      entry.progressCallback = (bytesWritten, totalBytes) => {
-        Object.assign(entryProgress[index], { bytesWritten, totalBytes });
-        const totalBytesWritten = entryProgress.reduce((sum, progress) => sum + progress.bytesWritten, 0);
-        const totalBytesExpected = entryProgress.reduce((sum, progress) => sum + progress.totalBytes, 0);
-        options?.progress?.(totalBytesWritten, totalBytesExpected);
-      };
-      return await entry.entryParts();
-    }))) {
+    for (const entryParts of await Promise.all(
+      this.entries.map(async (entry, index) => {
+        entry.progressCallback = (bytesWritten, totalBytes) => {
+          Object.assign(entryProgress[index], { bytesWritten, totalBytes });
+          const totalBytesWritten = entryProgress.reduce(
+            (sum, progress) => sum + progress.bytesWritten,
+            0,
+          );
+          const totalBytesExpected = entryProgress.reduce(
+            (sum, progress) => sum + progress.totalBytes,
+            0,
+          );
+          options?.progress?.(totalBytesWritten, totalBytesExpected);
+        };
+        return await entry.entryParts();
+      }),
+    )) {
       parts.push(...entryParts);
     }
 
@@ -204,6 +220,6 @@ export class ZipWriter {
     footer.setUint32(16, offset, true); // Offset of start of central directory with respect to the starting disk number
     footer.setUint16(20, 0x0000, true); // .ZIP file comment length
     parts.push(footer);
-    return new Blob(parts, {type: "application/zip"});
+    return new Blob(parts, { type: "application/zip" });
   }
 }

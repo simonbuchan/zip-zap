@@ -11,17 +11,8 @@
     "jsx": "preserve",
     "strict": true,
     "skipLibCheck": true,
-    "lib": [
-      "es2023",
-      "dom",
-      "dom.iterable"
-    ],
-    "types": [
-      "react",
-      "vite/client"
-    ]
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": ["react", "vite/client"]
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

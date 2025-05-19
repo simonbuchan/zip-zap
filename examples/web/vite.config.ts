@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
-import {setTimeout as delay} from "node:timers/promises";
-import {defineConfig} from "vite";
+import { setTimeout as delay } from "node:timers/promises";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
@@ -15,7 +15,7 @@ export default defineConfig({
               const filePath = req.url.slice("/file/".length);
 
               const file = await fs.open(filePath, "r").catch((error) => {
-                return null
+                return null;
               });
               if (!file) {
                 res.writeHead(404);

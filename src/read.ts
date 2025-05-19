@@ -37,7 +37,7 @@ export class ZipReader {
     this.data = new ZipData(data);
   }
 
-  async* entries() {
+  async *entries() {
     const dir = await ZipDirectory.read(this.data);
     for (const dirEntry of dir.entries()) {
       yield await ZipEntry.fromDirectoryEntry(this.data, dirEntry);
@@ -81,7 +81,10 @@ class ZipFooter {
 class ZipDirectory {
   static async read(data: ZipData) {
     const footer = await ZipFooter.read(data);
-    const dirView = await data.view(footer.directoryOffset, footer.directorySize);
+    const dirView = await data.view(
+      footer.directoryOffset,
+      footer.directorySize,
+    );
     return new ZipDirectory(footer, dirView);
   }
 
@@ -93,8 +96,8 @@ class ZipDirectory {
     this.data = data;
   }
 
-  * entries(): Iterable<ZipDirectoryEntry> {
-    for (let dataOffset = 0; dataOffset < this.data.byteLength;) {
+  *entries(): Iterable<ZipDirectoryEntry> {
+    for (let dataOffset = 0; dataOffset < this.data.byteLength; ) {
       const entry = new ZipDirectoryEntry(this.data, dataOffset);
       dataOffset += entry.directoryEntrySize();
       yield entry;
@@ -147,13 +150,24 @@ export class ZipDirectoryEntry {
     let sliceStart = data.byteOffset + offset + ZipDirectoryEntry.SIZE;
     this.rawName = new Uint8Array(data.buffer, sliceStart, fileNameLength);
     sliceStart += fileNameLength;
-    this.rawExtraField = new Uint8Array(data.buffer, sliceStart, extraFieldLength);
+    this.rawExtraField = new Uint8Array(
+      data.buffer,
+      sliceStart,
+      extraFieldLength,
+    );
     sliceStart += extraFieldLength;
-    this.rawComment = new Uint8Array(data.buffer, sliceStart, fileCommentLength);
+    this.rawComment = new Uint8Array(
+      data.buffer,
+      sliceStart,
+      fileCommentLength,
+    );
   }
 
   isDirectory() {
-    return this.rawName[this.rawName.length - 1] === 0x2f && this.uncompressedSize === 0;
+    return (
+      this.rawName[this.rawName.length - 1] === 0x2f &&
+      this.uncompressedSize === 0
+    );
   }
 
   name() {
@@ -165,7 +179,12 @@ export class ZipDirectoryEntry {
   }
 
   directoryEntrySize() {
-    return ZipDirectoryEntry.SIZE + this.rawName.length + this.rawExtraField.length + this.rawComment.length;
+    return (
+      ZipDirectoryEntry.SIZE +
+      this.rawName.length +
+      this.rawExtraField.length +
+      this.rawComment.length
+    );
   }
 }
 
@@ -229,9 +248,21 @@ export class ZipEntry {
     entry: ZipDirectoryEntry,
   ): Promise<ZipEntry> {
     const header = ZipLocalHeader.fromDirectoryEntry(entry);
-    const compressedDataOffset = entry.relativeOffset + ZipLocalHeader.SIZE + entry.rawName.length + entry.rawExtraField.length;
-    const compressedData = data.slice(compressedDataOffset, entry.compressedSize);
-    return new ZipEntry(header, entry.rawName, entry.rawExtraField, compressedData);
+    const compressedDataOffset =
+      entry.relativeOffset +
+      ZipLocalHeader.SIZE +
+      entry.rawName.length +
+      entry.rawExtraField.length;
+    const compressedData = data.slice(
+      compressedDataOffset,
+      entry.compressedSize,
+    );
+    return new ZipEntry(
+      header,
+      entry.rawName,
+      entry.rawExtraField,
+      compressedData,
+    );
   }
 
   static async fromHeader(
@@ -240,10 +271,16 @@ export class ZipEntry {
     header: ZipLocalHeader,
   ): Promise<ZipEntry> {
     const compressedDataOffset = relativeOffset + header.size();
-    const compressedData = data.slice(compressedDataOffset, header.compressedSize);
+    const compressedData = data.slice(
+      compressedDataOffset,
+      header.compressedSize,
+    );
     const [rawPath, extraField] = await Promise.all([
       data.bytes(relativeOffset, header.fileNameLength),
-      data.bytes(relativeOffset + header.fileNameLength, header.extraFieldLength),
+      data.bytes(
+        relativeOffset + header.fileNameLength,
+        header.extraFieldLength,
+      ),
     ]);
     return new ZipEntry(header, rawPath, extraField, compressedData);
   }
@@ -277,6 +314,8 @@ export class ZipEntry {
     if (this.header.method === 0) {
       return this.compressedData.stream();
     }
-    return this.compressedData.stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return this.compressedData
+      .stream()
+      .pipeThrough(new DecompressionStream("deflate-raw"));
   }
 }

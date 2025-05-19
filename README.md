@@ -11,4 +11,4 @@ so I mostly just have it for validation.
 
 For now the "documentation" is just the example in [`examples/web`]()
 
-If there's any interest expressed 
+If there's any interest expressed

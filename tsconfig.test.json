@@ -11,5 +11,5 @@
     "skipLibCheck": true,
     "lib": ["es2023", "dom"]
   },
-  "include": ["src/**/*.test.ts"],
+  "include": ["src/**/*.test.ts"]
 }

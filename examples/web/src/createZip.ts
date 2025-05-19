@@ -1,4 +1,4 @@
-import {ZipWriter} from "@simonbuchan/zip-zap/write";
+import { ZipWriter } from "@simonbuchan/zip-zap/write";
 
 export interface EntryContentMap {
   readonly text: string;
@@ -27,7 +27,10 @@ export type ProgressHandler = (
   totalBytes: number,
 ) => void;
 
-export async function createZip(entries: readonly Entry[], progress?: ProgressHandler): Promise<Blob> {
+export async function createZip(
+  entries: readonly Entry[],
+  progress?: ProgressHandler,
+): Promise<Blob> {
   const writer = new ZipWriter();
 
   for (const entry of entries) {
@@ -47,7 +50,9 @@ export async function createZip(entries: readonly Entry[], progress?: ProgressHa
       case "url": {
         const res = await fetch(entry.content);
         if (!res.ok) {
-          throw new Error(`Failed to fetch ${entry.content}: ${res.statusText}`);
+          throw new Error(
+            `Failed to fetch ${entry.content}: ${res.statusText}`,
+          );
         }
         writer.addResponse(entry.path, res, {
           compressed: entry.compressed,

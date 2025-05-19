@@ -1,5 +1,5 @@
-import {expect, test} from 'vitest';
-import {ZipWriter} from "./write.js";
+import { expect, test } from "vitest";
+import { ZipWriter } from "./write.js";
 
 // Just a snapshot test for now.
 test("snapshot", async () => {
