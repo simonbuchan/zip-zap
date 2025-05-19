@@ -20,12 +20,15 @@
   ],
   "scripts": {
     "prepare": "tsc -b",
-    "test": "vitest"
+    "test": "vitest",
+    "fmt:check": "prettier --check .",
+    "fmt:write": "prettier --write ."
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.4",
     "typescript": "~5.8.3",
-    "vitest": "^3.1.3"
+    "vitest": "^3.1.3",
+    "prettier": "^3.5.3"
   },
   "workspaces": [
     "examples/*"

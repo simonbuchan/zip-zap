@@ -6,8 +6,8 @@
     "extends": "../../package.json"
   },
   "scripts": {
-    "build": "tsc -b",
-    "dev": "vite"
+    "dev": "vite",
+    "check:types": "tsc -b"
   },
   "dependencies": {
     "@types/react": "^19.1.4",
