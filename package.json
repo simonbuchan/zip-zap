@@ -1,5 +1,5 @@
 {
-  "name": "zip-zap",
+  "name": "@simonbuchan/zip-zap",
   "version": "1.0.0",
   "type": "module",
   "description": "Lightweight in-memory zip files",
@@ -7,6 +7,11 @@
     "./read": "./lib/read.js",
     "./write": "./lib/write.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/simonbuchan/zip-zap.git"
+  },
+  "license": "MIT",
   "files": [
     "lib",
     "src",

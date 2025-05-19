@@ -1,4 +1,4 @@
-import {ZipWriter} from "zip-zap/write";
+import {ZipWriter} from "@simonbuchan/zip-zap/write";
 
 export interface EntryContentMap {
   readonly text: string;
